@@ -1,39 +1,36 @@
 //const bodyParser = require("body-parser");
 
-const baseURL = `http://flip1.engr.oregonstate.edu:8157/`;
+const baseURL = 'http://flip1.engr.oregonstate.edu:8157/';
+const table = document.getElementById('workoutsTable');
 const deleteTable = () => {
-    let table = document.getElementById("workoutsTable");
-    if (table){
-        table.parentNode.removeChild(table);
-    }
+    while (table.firstChild) {
+        table.removeChild(table.firstChild);
+    }    
 };
 
 const makeTable = (allRows) => {
-    let table = document.createElement("table");
+    console.log("Made it to Make Table");
 
-    table.setAttribute("id", "workoutsTable");
-
-    table.appendChild(makeHeaderRow());
+    table.innerHTML = makeHeaderRow();
+    console.log("Made it past Make HR")
 
     for (var i = 0; i < allRows.length; i++){
         table.appendChild(makeRow(allRows[i]));
     }
-
-    return table;
 };
 
 const makeHeaderRow = () => {
-    let headerRow = document.createElement("tr");
-    headerRow.setAttribute("id", "header");
+    console.log("Made it to Make HR");
     var headers = ["id", "name", "reps", "weight", "unit", "date", "update", "delete"];
+    let html = "<tr>"
+    headers.forEach(function(h){
+        html += "<th>"+h+"</th>";
+    });
+    html += "</tr>";
 
-    for (var i = 0; i < headers.length; i++) {
-       let headerCell = document.createElement("th");
-       headerCell.appendChild(document.createTextNode(headers[i]));
-       headerRow.appendChild(headerCell);
-    }
-    
-    return headerRow;
+    console.log(html);
+
+    return html;
 };
 
 const makeRow = (rowData, headerRow = false) => {
@@ -43,227 +40,218 @@ const makeRow = (rowData, headerRow = false) => {
     newRow.setAttribute("id", rowData[0]);
 
     for (var i = 0; i < headers.length; i++){
-        newRow.appendChild(makeCell(headers[i], rowData[i]));
+        newRow.appendChild(makeCell(rowData[0], headers[i], rowData[i]));
     }
 
-    newRow.appendChild(makeCell("update", "Update"));
-    newRow.appendChild(makeCell("delete", "Delete"));
-
-    for (var i = 0; i < newRow.length - 1; i++) {
-        for (children in node){
-            children.setAttribute("id", "Form " + rowData[0]);
-        }
-    }
-
-    var delButton = newRow.getElementById("delete");
-    delButton.setAttribute("value", rowData[0]);
+    newRow.appendChild(makeCell(rowData[0], "update", "Update"));
+    newRow.appendChild(makeCell(rowData[0], "delete", "Delete"));
 
     return newRow;
 };
 
-const makeCell = (name, contents, headerRow = false) => {
+const makeCell = (id, keyVal, contents, headerRow = false) => {
     let newCell = document.createElement("td");
 
-    if (name == "units") {
-        let newForm = document.createElement("form");
-        newForm.appendChild(makeDropDown(name, contents));
-        newCell.appendChild(newForm);
-    } else if (name == ("update" || "delete")) {
-        newCell.appendChild(makeButton(name, contents));
-    } else if (name == "id") {
-        newCell.appendChild(createTextNode(contents));
+    if (keyVal == "unit") {
+        newCell.appendChild(makeDropDown(id, keyVal, contents));
+    } else if (keyVal == "update" || keyVal == "delete") {
+        newCell.appendChild(makeButton(id, keyVal, contents));
+    } else if (keyVal == "id") {
+        newCell.appendChild(document.createTextNode(contents));
     }
     else {
-        let newForm = document.createElement("form");
-        newForm.appendChild(makeInput(text, name, contents));
+        var type;
+        var input;
+        var newForm = document.createElement("form");
+        newForm.setAttribute("id", "row-" + id);
+
+        if (keyVal == "name"){
+            type = 'text';
+            input = contents;
+        } else if (keyVal == "date") {
+            type = 'date';
+            input = contents.substring(0,10);
+        } else {
+            type = 'number';
+            input = contents;
+        }
+
+        newForm.appendChild(makeInput(type, keyVal, input));
         newCell.appendChild(newForm);
     }
     return newCell;
 };
 
-const makeInput = (type, name, value) => {
+const makeInput = (type, keyVal, value) => {
     
     let newInput = document.createElement("input");
     newInput.setAttribute("type", type);
-    newInput.setAttribute("name", name);
+    newInput.setAttribute("name", keyVal);
     newInput.setAttribute("value", value); 
 
-    disableInput(newInput);
     return newInput;
 };
 
-const makeDropDown = (name, value) => {
+const makeDropDown = (id, keyVal, input) => {
     var newSelect = document.createElement("select");
-    newSelect.setAttribute("name", name);
-    newSelect.setAttribute("id", name);
+   newSelect.setAttribute("form", "row-" + id);
+    newSelect.setAttribute("name", keyVal);
+    newSelect.setAttribute("id", keyVal);
 
     var newOption = document.createElement("option");
-    newOption.setAttribute("value", "kgs");
+    newOption.setAttribute("value", "lbs");
+    if (newOption.value == input){
+        newOption.setAttribute("selected", "selected");
+    }
+    newOption.appendChild(document.createTextNode("lbs"));
     newSelect.appendChild(newOption);
     newOption = document.createElement("option");
-    newOption.setAttribute("value", "lbs");
-    newSelect.appendChild(newOption);
-
-    for (options in newSelect) {
-        if (options.getAttribute("value") == value) {
-            options.setAttribute("selected", "selected")
-            break;
-        }
+    newOption.setAttribute("value", "kgs");
+    if (newOption.value == input){
+        newOption.setAttribute("selected", "selected");
     }
-
-    disableInput(newSelect);
+    newOption.appendChild(document.createTextNode("kgs"));
+    newSelect.appendChild(newOption);
 
     return newSelect;
 }
 
-const makeButton = (name, txt) => {
+const makeButton = (formId, id, name) => {
     let newButton = document.createElement("button");
-    newButton.setAttribute("id", name);
-    newButton.appendChild(document.createTextNode(txt));
+    newButton.setAttribute("id", id);
+
+    if (id == "update"){
+        newButton.setAttribute("type" , "submit");
+        newButton.setAttribute("form", "row-" + formId);
+    } else {
+        newButton.setAttribute("value", formId);
+    }
+
+    newButton.appendChild(document.createTextNode(name));
 
     return newButton;
 };
 
-const disableInput = (formID) => {
-    formID.disabled = true;
-};
+table.addEventListener('click', async (event) => {
+    const target = event.target.closest('button');
 
-const enableRow = (row) => {
-    for (element in row) {
-        element.disabled = false;
-    }
-};
+    if (!target) return;
 
-const toggleUpdateButton = (rowID) => {
-    let tableRow = table.getElementById(rowID);
-    let updateButton = tableRow.getElementById("update");
+    let row = target.parentNode.parentNode;
 
-    updateButton.id = "edit";
-    updateButton.firstChild.nodeValue = "Done";
-    updateButton.setAttribute ("form", rowID);
-    updateButton.setAttribute("type", "submit");
-
-};
-
-const table = document.getElementById('workoutsTable');
-
-if (table) { 
-    table.addEventListener('click', (event) => {
-        let target = event.target;
-
-        if (target.tagName != 'button') return;
-
-        let row = target.parentNode.parentNode;
-
-        if (target.id == "update") {
-            toggleUpdateButton(row);
-            enableRow(row);
+    if (target.id == "update") {
+        console.log(row.id);
+        let str = {
+            id: row.querySelector('id').value,
+            name: row.querySelector('name').value,
+            reps: row.querySelector('reps').value,
+            weight: row.querySelector('weight').value,
+            unit: row.querySelector('unit').value,
+            date: row.querySelector('date').value,
         }
-
-        else if (target.id == "delete") {
-            var req = new XMLHttpRequest();
-            let payload = {
-                id: target.value
-            }
-            req.open('DELETE', baseURL, true);
-            req.setRequestHeader('Content-Type', 'application/json');
-            req.addEventListener('load',function(){
-                if(req.status >= 200 && req.status < 400){
-                    alert(req.responseText);
-                }
-                else {
-                    console.log("Error in network request: " + req.statusText);
-                }});
-            event.preventDefault();
-        }
-
-        return;
-    });
-};
-
-if (table) {
-    table.getElementsByTagName('form').onsubmit = async (event) => {
-        event.preventDefault();
-        var row = event.target.parentNode;
-
-        var req = new XMLHttpRequest();
-        let payload = {
-            id: row.getElementsByName('id').value,
-            name: row.getElementsByName('name').value,
-            reps: row.getElementsByName('reps').value,
-            weight: row.getElementsByName('weight').value,
-            unit: row.getElementsByName('unit').value,
-            date: row.getElementsByName('date').value,
-        }
-        req.open('PUT', baseURL, true)
-        req.setRequestHeader('Content-Type', 'application/json');
-        req.addEventListener('load',function(){
-        if(req.status >= 200 && req.status < 400){
-            var response = JSON.parse(req.responseText);
-            alert(response);
-        } else {
-            console.log("Error in network request: " + req.statusText);
-        }});
+        
+        console.log(str);
+            
+        let response = await fetch(baseURL, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(str)
+        });
+        let result = await response.json();
 
         deleteTable();
-        let tableData = getData();
-        document.appendChild(makeTable(tableData));    
+        const rowData = getData();
+        document.appendChild(makeTable(rowData));
     }
-}
+
+    else if (target.id == "delete") {
+        console.log("Registered you hit the delete button");
+        let str = target.value;
+
+        let response = await fetch(baseURL, {
+            method: "DELETE",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(str)
+        });
+        event.preventDefault();
+
+        deleteTable();
+        const rowData = getData();
+        document.appendChild(makeTable(rowData));
+    }
+
+    return;
+});
 
 const onUpdate = () => {};
-const onDelete = () => {};
+const onDelete = () => {
+    deleteTable();
+    const rowData =  getData();
+    document.appendChild(makeTable(rowData));
+};
 
 const getData = async () => {
-    var req = new XMLHttpRequest();
-    var rowData;
-    req.open('GET', baseURL, true);
-    req.setRequestHeader('Content-Type', 'application/json');
-    req.addEventListener('load',function(){
-      if(req.status >= 200 && req.status < 400){
-        rowData = JSON.parse(req.responseText);
-      } else {
-        console.log("Error in network request: " + req.statusText);
-      }});
+    let response = await fetch(baseURL, {
+        method: 'GET',
+        headers: {
+            'Content-Type' : 'application/json'
+        }
+    });
+    let tableData = await response.json();
+
+    var rowData =Object.values(JSON.parse(tableData.results)).map(el=>Object.values(el));
+
+
+    //var rowData = Object.values(JSON.parse(tableData.results)[0]);
+    console.log(tableData);
+    console.log(rowData);
+
     return rowData;
 };
 
 document.getElementById('addForm').onsubmit = async (event) => {
     event.preventDefault();
-
-    var req = new XMLHttpRequest();
-    let payload = {
+    let str = {
         name: document.getElementById('name').value,
         reps: document.getElementById('reps').value,
         weight: document.getElementById('weight').value,
         unit: document.getElementById('unit').value,
         date: document.getElementById('date').value,
-      }
-      console.log(payload);
-    req.open('POST', baseURL, true)
-    req.setRequestHeader('Content-Type', 'application/json');
-    req.addEventListener('load',function(){
-      if(req.status >= 200 && req.status < 400){
-        var response = JSON.parse(req.responseText);
-        document.appendChild(makeTable(tableData));
-    } else {
-        console.log("Error in network request: " + req.statusText);
-      }});
+    }
 
-      deleteTable();
-      let tableData = await getData();
-      if (tableData == 'null') {
-          console.log("Add some data.");
-          return;
-      }
-      document.appendChild(makeTable(tableData));
-};
+    console.log(str);
+    
+    let response = await fetch(baseURL, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(str)
+    });
+    let result = await response.json();
 
-/*(async () => {
+    deleteTable();
     let tableData = await getData();
     if (tableData == 'null') {
         console.log("Add some data.");
         return;
+      }
+    makeTable(tableData);
+};
+
+(async () => {
+    console.log("Page loaded")
+    deleteTable();
+    console.log("Table deleted");
+    let tableData = await getData();
+    console.log("TableData should be populated");
+    if (tableData == 'null') {
+        console.log("Add some data.");
+        return;
     }
-    document.appendChild(makeTable(tableData));
-})();*/
+    makeTable(tableData);
+})();
